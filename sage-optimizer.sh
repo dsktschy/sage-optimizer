@@ -1,35 +1,43 @@
 #!/usr/bin/env bash
 
-# Ask directory name of theme to be created
-echo 'Input directory name of theme to be created.'
-read BASENAME
-# Ask site domain of local development hostname
-echo 'Input site domain of local development hostname.'
-read DEVURL
-# Ask path to .crt file for SSL
-echo 'Input path to .crt file for SSL.'
-read BROWSER_SYNC_HTTPS_CERT
-# Ask path to .key file for SSL
-echo 'Input path to .key file for SSL.'
-read BROWSER_SYNC_HTTPS_KEY
+# Check argument that is directory name of theme to be created
+if [ $# -eq 0 ]; then
+  echo 'Input directory name of theme to be created, as argument.'
+  exit 1
+fi
 # Detect path to directory contains this script
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 # Create theme based Sage
-composer create-project roots/sage ${BASENAME}
+composer create-project roots/sage $1
+# Ask path to .crt file for SSL
+echo "Path to .crt file for SSL (e.g., /.ssl/localhost.crt)"
+read BROWSER_SYNC_HTTPS_CERT
+# Ask path to .key file for SSL
+echo "Path to .key file for SSL (e.g., /.ssl/localhost.key)"
+read BROWSER_SYNC_HTTPS_KEY
 # Start sub shell
 (
   # Move to theme directory
-  cd ${BASENAME}
-  # Create .env from variables
-  echo SAGE_DIST_PATH=/wp-content/themes/${BASENAME}/dist >> .env
-  echo DEVURL=${DEVURL} >> .env
-  echo BROWSER_SYNC_HTTPS_CERT=${BROWSER_SYNC_HTTPS_CERT} >> .env
-  echo BROWSER_SYNC_HTTPS_KEY=${BROWSER_SYNC_HTTPS_KEY} >> .env
+  cd $1
   # Install and uninstall Node modules
   npm i
-  npm i -D ajv@^5.0.0 webpack@^3.11.0 dotenv@^6.1.0 browser-sync-webpack-plugin@^2.2.2
+  npm i -D ajv@^5.0.0 webpack@^3.11.0 browser-sync-webpack-plugin@^2.2.2
   npm uninstall jquery browsersync-webpack-plugin
   npm audit fix
+  # From config.json, pick up values that should not be managed by git
+  PUBLIC_PATH_LINE=`grep '"publicPath":' resources/assets/config.json`
+  DEV_URL_LINE=`grep '"devUrl":' resources/assets/config.json`
+  # Create config-local.json that is not managed by git
+  cat <<EOF > resources/assets/config-local.json
+{
+${PUBLIC_PATH_LINE}
+${DEV_URL_LINE}
+  "browserSyncHttps": {
+    "cert": "${BROWSER_SYNC_HTTPS_CERT}",
+    "key": "${BROWSER_SYNC_HTTPS_KEY}"
+  }
+}
+EOF
   # Replace and remove files
   \cp -f ${SCRIPT_DIR}/theme/.gitignore .gitignore
   \cp -f ${SCRIPT_DIR}/theme/.eslintrc.js .eslintrc.js

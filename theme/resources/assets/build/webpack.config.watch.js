@@ -9,7 +9,8 @@ const target = process.env.DEVURL || config.devUrl;
 /**
  * We do this to enable injection over SSL.
  */
-if (url.parse(target).protocol === 'https:') {
+const https = url.parse(target).protocol === 'https:'
+if (https) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
   config.proxyUrl = config.proxyUrl.replace('http:', 'https:');
@@ -42,10 +43,7 @@ module.exports = {
         /**
          * Use SSL certificate to avoid browser warnings
          */
-        https: {
-          key: process.env.BROWSER_SYNC_HTTPS_KEY,
-          cert: process.env.BROWSER_SYNC_HTTPS_CERT,
-        },
+        https: https ? config.browserSyncHttps : undefined,
         /**
          * Settings to inject PHP changes
          */

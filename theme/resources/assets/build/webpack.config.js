@@ -1,5 +1,4 @@
 'use strict'; // eslint-disable-line
-require('dotenv').config();
 
 const webpack = require('webpack');
 const merge = require('webpack-merge');
