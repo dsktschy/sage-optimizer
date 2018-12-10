@@ -9,6 +9,9 @@ fi
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 # Create theme based Sage
 composer create-project roots/sage $1
+# Ask whether to use npm instead of yarn, or not
+echo 'Do you use npm instead of yarn? (yes/no) [no]'
+read USING_NPM
 # Ask path to .crt file for SSL
 echo "Path to .crt file for SSL (e.g., /.ssl/localhost.crt)"
 read BROWSER_SYNC_HTTPS_CERT
@@ -20,10 +23,16 @@ read BROWSER_SYNC_HTTPS_KEY
   # Move to theme directory
   cd $1
   # Install and uninstall Node modules
-  npm i
-  npm i -D ajv@^5.0.0 webpack@^3.11.0 browser-sync-webpack-plugin@^2.2.2
-  npm uninstall jquery browsersync-webpack-plugin
-  npm audit fix
+  if [ $USING_NPM = 'yes' ]; then
+    npm i
+    npm i -D ajv@^5.0.0 webpack@^3.11.0 browser-sync-webpack-plugin@^2.2.2
+    npm uninstall jquery browsersync-webpack-plugin
+    npm audit fix
+  else
+    yarn install
+    yarn add --dev ajv@^5.0.0 webpack@^3.11.0 browser-sync-webpack-plugin@^2.2.2
+    yarn remove jquery browsersync-webpack-plugin
+  fi
   # From config.json, pick up values that should not be managed by git
   PUBLIC_PATH_LINE=`grep '"publicPath":' resources/assets/config.json`
   DEV_URL_LINE=`grep '"devUrl":' resources/assets/config.json`
